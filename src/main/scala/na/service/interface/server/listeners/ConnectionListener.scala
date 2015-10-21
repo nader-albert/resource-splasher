@@ -16,10 +16,10 @@ import spray.routing._
  * http://spray.io/documentation/1.2.2/spray-routing/predefined-directives-by-trait/#list-of-predefined-directives-by-trait
  */
 
-class NotificationListener extends HttpServiceActor {
+class ConnectionListener extends HttpServiceActor {
   var notificationMap = Map [Topic, NotificationMessage] (Topic("jackpots") -> NotificationMessage("jackpot of 10 million this Friday, buy tickets now!", Topic("jackpots")))
 
-  import NotificationListener._
+  import ConnectionListener._
   import unmarshalling._
   import ContentType._
 
@@ -93,8 +93,8 @@ class NotificationListener extends HttpServiceActor {
   }
 }
 
-object NotificationListener {
-  def props = Props(classOf[NotificationListener])
+object ConnectionListener {
+  def props = Props(classOf[ConnectionListener])
 
   import languageFeature.implicitConversions._
   import spray.json._
