@@ -51,14 +51,14 @@ class NotificationListener extends HttpServiceActor {
   }
 
   override def receive: Receive = runRoute {
-    path("lotterywest"){
+    path("resource"){
       get{
         complete {
-          "welcome to lotterywest notification API's"
+          "welcome to resource API's"
         }
       }
     } ~
-    pathPrefix("lotterywest") {
+    pathPrefix("resource") {
       handleRejections (customRejectionHandler) {
         pathPrefix("notification") {
           post {
