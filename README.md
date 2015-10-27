@@ -1,12 +1,5 @@
 ## Features:
 
-* ReST API's
-   - ReST API providing two endpoints serving GET / POST HTTP Requests
-* Integration with GCM
-* Persisting Notifications
-* Scheduling Notifications' Submission to GCM
-* Authentication / Security
-
 ## Getting Started:
 To send a notification messsage to a mobile client app, Android or Ios, a notification message has to be posted in JSON format, as the body of an HTTP/1.1 request.
 
