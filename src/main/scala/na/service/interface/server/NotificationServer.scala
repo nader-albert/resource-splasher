@@ -1,8 +1,8 @@
 package na.service.interface.server
 
-import na.service.interface.server.listeners.NotificationListener
-
 import akka.io.IO
+import na.service.interface.server.listeners.ConnectionListener
+import na.service.interface.server.publishers.gcm.NotificationPublisher
 import spray.can.Http
 import akka.actor.{Props, ActorSystem}
 
@@ -16,7 +16,9 @@ object NotificationServer extends App {
 
   implicit val system = ActorSystem("Notification-Server")
 
-  val notificationListener = system.actorOf(Props[NotificationListener])
+  val notificationPublisher = system.actorOf(Props[NotificationPublisher])
+
+  val notificationListener = system.actorOf(ConnectionListener.props(notificationPublisher))
 
   /*
    * when a Http.Bind message is sent to the IO Actor, an HttpListener actor is started, which accepts incoming

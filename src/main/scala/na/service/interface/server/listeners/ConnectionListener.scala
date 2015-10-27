@@ -1,7 +1,9 @@
 package na.service.interface.server.listeners
 
-import akka.actor.Props
-import na.service.interface.model.{Topic, NotificationMessage}
+import na.service.interface.model.Notification
+import akka.actor.{ActorRef, Props}
+import na.service.interface.model._
+import na.service.interface.server.publishers.gcm.Publish
 import spray.http.HttpHeaders.`Content-Type`
 import spray.http._
 import spray.httpx.marshalling.ToResponseMarshallable
@@ -16,8 +18,8 @@ import spray.routing._
  * http://spray.io/documentation/1.2.2/spray-routing/predefined-directives-by-trait/#list-of-predefined-directives-by-trait
  */
 
-class ConnectionListener extends HttpServiceActor {
-  var notificationMap = Map [Topic, NotificationMessage] (Topic("jackpots") -> NotificationMessage("jackpot of 10 million this Friday, buy tickets now!", Topic("jackpots")))
+class ConnectionListener(publisher :ActorRef) extends HttpServiceActor {
+  var notificationMap = Map [Topic, Notification] (Topic("jackpots") -> Notification("jackpot of 10 million this Friday, buy tickets now!", Topic("jackpots")))
 
   import ConnectionListener._
   import unmarshalling._
@@ -62,12 +64,14 @@ class ConnectionListener extends HttpServiceActor {
       handleRejections (customRejectionHandler) {
         pathPrefix("notification") {
           post {
-            entity(as[NotificationMessage]) { notification =>
+            entity(as[Notification]) { notification =>
               headerValue { //note: the function supplied to headerValue should be a Function not a PartialFunction.. it will be called for every header until it matches the one we are looking for.. for other headers it is expected to return None... if it returns None for all header, the request will be rejected with NotFound error
                 case `Content-Type`(ct: ContentType) => Some(ct) //if ct.mediaType == MediaTypes.`application/json` => Some (ct)
                 case _ => None
               } { case contentType: ContentType if contentType.mediaType == MediaTypes.`application/json` => {
                     notificationMap = notificationMap.updated(notification.topic, notification)
+                    println("passing notification to publisher ...")
+                    publisher ! Publish(notification)
                     complete {
                       HttpResponse(StatusCodes.Created) // should be sent to the publishing actor, and a response of 200 should be returned, depicting that it will be acted upon later !
                     }
@@ -80,7 +84,7 @@ class ConnectionListener extends HttpServiceActor {
               parameterMap { parameters =>
                 complete {
                   parameters.get("topic").fold(notificationMap.values)(topicName => {
-                    notificationMap.get(Topic(topicName)).fold(List.empty[NotificationMessage])(notification => List(notification))
+                    notificationMap.get(Topic(topicName)).fold(List.empty[Notification])(notification => List(notification))
                   })
                 }
                 //reject(UnsupportedRequestContentTypeRejection("get")) //for testing ... should be removed !
@@ -94,20 +98,28 @@ class ConnectionListener extends HttpServiceActor {
 }
 
 object ConnectionListener {
-  def props = Props(classOf[ConnectionListener])
+  def props(publisher: ActorRef) = Props(classOf[ConnectionListener], publisher)
 
   import languageFeature.implicitConversions._
   import spray.json._
 
-  import NotificationMessage._
+  import Notification._
 
-  implicit def toNotificationMessage(request: HttpEntity): NotificationMessage = readNotification(request.data.asString)
+  implicit def toNotification(request: HttpEntity): Notification = readNotification(request.data.asString)
 
-  implicit def fromNotificationMessage(notifications: Iterable[NotificationMessage]): ToResponseMarshallable =
+  implicit def fromNotifications(notifications: Iterable[Notification]): ToResponseMarshallable =
     HttpResponse(StatusCodes.OK, HttpEntity(ContentType(MediaTypes.`application/json`),
       JsObject(("notifications", JsArray(notifications.map(_.toJson).toList))).toString))
 
-  def readNotification(notification: String) (implicit reader: JsonReader[NotificationMessage]) = reader.read(JsString(notification))
+  def readNotification(notification: String) (implicit reader: JsonReader[Notification]) = reader.read(JsString(notification))
+
+  implicit def gcmNotificationMessage(notification :Notification) :NotificationMessage = {
+    /*println(NotificationMessage(NotificationPayload(Map().updated("text", notification.text))
+      ,TopicTarget("/topics/" + notification.topic.name), None)) */
+
+    NotificationMessage(NotificationPayload(Map().updated("text", notification.text))
+      ,TopicTarget("/topics/" + notification.topic.name), None)
+  }
 
 }
 
