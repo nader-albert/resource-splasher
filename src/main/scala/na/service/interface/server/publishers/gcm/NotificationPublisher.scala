@@ -85,7 +85,7 @@ object NotificationPublisher {
     HttpRequest(HttpMethods.POST,
       URI,
       List(`Content-Type`(MediaTypes.`application/json`),
-        HttpHeaders.Authorization(GenericHttpCredentials("","key=AIzaSyC2wOKAwFIgvxTfEnV5CXKW5oQfb5Chp4k"))),
+        HttpHeaders.Authorization(GenericHttpCredentials("","key="+serverApiKey))),
       HttpEntity(MediaTypes.`application/json`, notification.toJson.toString))
 }
 
