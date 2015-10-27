@@ -1,5 +1,6 @@
 package na.service.interface.server.publishers.gcm
 
+import com.typesafe.config.{ConfigFactory, Config}
 import na.service.interface.model.NotificationMessage
 import spray.http.HttpResponse
 import akka.actor.Actor
@@ -52,17 +53,19 @@ class NotificationPublisher extends Actor {
 
 object NotificationPublisher {
 
-  val GCM_SEND_ENDPOINT: String = "https://android.googleapis.com/gcm/send"
+  val config = ConfigFactory load
 
-  val URI = "https://gcm-http.googleapis.com/gcm/send"
+  val applicationConfig: Config = config getConfig "notification_server"
+
+  val URI = applicationConfig getString "endpoint"
+  val serverApiKey = applicationConfig getString "apiKey"
+
+  val senderID = "9480043767"
+  val iosApp = "LWNotificationServerIos"
+  val androidApp = "LWNotificationServerAndroid"
+  val androidPackageName = "lw.notification.android"
 
   val AUTHORIZATION: String = "Authorization"
-  private val serverApiKey: String = "AIzaSyC2wOKAwFIgvxTfEnV5CXKW5oQfb5Chp4k"
-  private val senderID = "9480043767"
-
-  private val iosApp = "LWNotificationServerIos"
-  private val androidApp = "LWNotificationServerAndroid"
-  private val androidPackageName = "lw.notification.android"
 
   import spray.json._ //provides us with the global toJson function
   import NotificationMessage._ //provides us with the implicit writer, required by the toJson, to convert the NotificationMessage to a Json String
