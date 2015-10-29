@@ -34,10 +34,10 @@ class ConnectionListener(publisher :ActorRef) extends HttpServiceActor {
     case MissingCookieRejection(cookieName) :: _ =>
       complete("No cookies, no service!!!")
 
-    case l::rest /*UnsupportedRequestContentTypeRejection(reason) :: _*/ => {
-      println (l)
-      println (rest)
-      complete("default handler !")
+    case MalformedRequestContentRejection(msg,cause)::_ /*UnsupportedRequestContentTypeRejection(reason) :: _*/ => {
+      complete{
+        HttpResponse(StatusCodes.BadRequest, HttpEntity(msg))
+      }
     }
   }
 
